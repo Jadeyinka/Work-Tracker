@@ -892,18 +892,18 @@ function cancelDelete(type) {
 // GOOGLE SHEETS SYNC
 // All save functions POST data to your Apps Script web app URL.
 // The Apps Script then writes/overwrites the relevant sheet tab.
-// SCRIPT_URL is the one URL you get after deploying your Apps Script.
+// https://script.google.com/macros/s/AKfycbz5glE6-AHVmVNplIPPm-Lx19qW0goy5aQnCT3W_FAMQiNHWYf7RvuqNVyJui1yJxd9/exec is the one URL you get after deploying your Apps Script.
 // ─────────────────────────────────────────────────────────────────────
 
-const SCRIPT_URL = 'YOUR_APPS_SCRIPT_URL_HERE'; // ← you'll replace this once
+const https://script.google.com/macros/s/AKfycbz5glE6-AHVmVNplIPPm-Lx19qW0goy5aQnCT3W_FAMQiNHWYf7RvuqNVyJui1yJxd9/exec = 'YOUR_APPS_https://script.google.com/macros/s/AKfycbz5glE6-AHVmVNplIPPm-Lx19qW0goy5aQnCT3W_FAMQiNHWYf7RvuqNVyJui1yJxd9/exec_HERE'; // ← you'll replace this once
 
 // Generic sync function — sends the full dataset for a given type to Sheets.
 // We always send the full array (not just one row) so the sheet stays in sync.
 // type = 'tasks' | 'meetings' | 'wins' | 'projects'
 async function syncToSheets(type, data) {
-  if (!SCRIPT_URL || SCRIPT_URL === 'YOUR_APPS_SCRIPT_URL_HERE') return; // skip if not set up yet
+  if (!https://script.google.com/macros/s/AKfycbz5glE6-AHVmVNplIPPm-Lx19qW0goy5aQnCT3W_FAMQiNHWYf7RvuqNVyJui1yJxd9/exec || https://script.google.com/macros/s/AKfycbz5glE6-AHVmVNplIPPm-Lx19qW0goy5aQnCT3W_FAMQiNHWYf7RvuqNVyJui1yJxd9/exec === 'YOUR_APPS_https://script.google.com/macros/s/AKfycbz5glE6-AHVmVNplIPPm-Lx19qW0goy5aQnCT3W_FAMQiNHWYf7RvuqNVyJui1yJxd9/exec_HERE') return; // skip if not set up yet
   try {
-    await fetch(SCRIPT_URL, {
+    await fetch(https://script.google.com/macros/s/AKfycbz5glE6-AHVmVNplIPPm-Lx19qW0goy5aQnCT3W_FAMQiNHWYf7RvuqNVyJui1yJxd9/exec, {
       method: 'POST',
       // 'no-cors' means we can't read the response, but the write still happens
       mode: 'no-cors',
@@ -1369,7 +1369,7 @@ function updateExportBtn() {
 // ─────────────────────────────────────────────────────────────────────
 
 async function loadFromSheets() {
-  if (!SCRIPT_URL || SCRIPT_URL === 'YOUR_APPS_SCRIPT_URL_HERE') {
+  if (!https://script.google.com/macros/s/AKfycbz5glE6-AHVmVNplIPPm-Lx19qW0goy5aQnCT3W_FAMQiNHWYf7RvuqNVyJui1yJxd9/exec || https://script.google.com/macros/s/AKfycbz5glE6-AHVmVNplIPPm-Lx19qW0goy5aQnCT3W_FAMQiNHWYf7RvuqNVyJui1yJxd9/exec === 'YOUR_APPS_https://script.google.com/macros/s/AKfycbz5glE6-AHVmVNplIPPm-Lx19qW0goy5aQnCT3W_FAMQiNHWYf7RvuqNVyJui1yJxd9/exec_HERE') {
     // Not connected yet — render empty state
     initRender();
     return;
@@ -1389,7 +1389,7 @@ async function loadFromSheets() {
   }
 
   try {
-    const res  = await fetch(SCRIPT_URL + '?action=load');
+    const res  = await fetch(https://script.google.com/macros/s/AKfycbz5glE6-AHVmVNplIPPm-Lx19qW0goy5aQnCT3W_FAMQiNHWYf7RvuqNVyJui1yJxd9/exec + '?action=load');
     const data = await res.json();
 
     if (data.tasks)    logs           = data.tasks;
