@@ -896,26 +896,67 @@ function cancelDelete(type) {
 // SCRIPT_URL is the one URL you get after deploying your Apps Script.
 // ─────────────────────────────────────────────────────────────────────
 
-const SCRIPT_URL = 'YOUR_APPS_SCRIPT_URL_HERE'; // ← you'll replace this once
+// ── Supabase config ──────────────────────────────────────────────────
+const SUPABASE_URL = 'https://ygodofkrprnhmcskwvjf.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlnb2RvZmtycHJuaG1jc2t3dmpmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyOTA1NjksImV4cCI6MjA5NDg2NjU2OX0.fqLfWwUfaE7zDapuYvkRzekOYTMqNY96X7JGF8g4SS4';
+const HEADERS = {
+  'Content-Type': 'application/json',
+  'apikey': SUPABASE_KEY,
+  'Authorization': 'Bearer ' + SUPABASE_KEY,
+  'Prefer': 'resolution=merge-duplicates'
+};
+
+// Helper: make a Supabase REST API call
+// Supabase gives every table a REST endpoint automatically — no backend needed!
+async function sbFetch(table, method, body) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
+    method,
+    headers: HEADERS,
+    body: body ? JSON.stringify(body) : undefined
+  });
+  if (!res.ok) throw new Error(`Supabase error: ${res.status}`);
+  return method === 'GET' ? res.json() : null;
+}
 
 // Generic sync function — sends the full dataset for a given type to Sheets.
 // We always send the full array (not just one row) so the sheet stays in sync.
 // type = 'tasks' | 'meetings' | 'wins' | 'projects'
+// Syncs a dataset to Supabase.
+// 'upsert' means insert if new, update if already exists (matched by id/name).
 async function syncToSheets(type, data) {
-  if (!SCRIPT_URL || SCRIPT_URL === 'YOUR_APPS_SCRIPT_URL_HERE') return;
   try {
-    // We use GET with URL parameters instead of POST because no-cors POST
-    // strips the request body — GET params always arrive intact.
-    const encoded = encodeURIComponent(JSON.stringify(data));
-    const url = `${SCRIPT_URL}?action=save&type=${type}&data=${encoded}`;
-    await fetch(url, { mode: 'no-cors' });
+    if (type === 'projects') {
+      // Projects are stored as {name, details} rows
+      const rows = Object.entries(data).map(([name, details]) => ({ name, details }));
+      if (rows.length === 0) return;
+      await sbFetch('projects', 'POST', rows);
+    } else {
+      if (!data || data.length === 0) return;
+      // For tasks/meetings/wins, upsert the full array
+      // Supabase matches on 'id' (primary key) to decide insert vs update
+      const table = type; // type is already 'tasks', 'meetings', or 'wins'
+      // Rename 'loggedAt' to 'loggedat' to match DB column (Postgres is lowercase)
+      const rows = data.map(r => {
+        const row = {...r};
+        if (row.loggedAt !== undefined) { row.loggedat = row.loggedAt; delete row.loggedAt; }
+        if (row.image && row.image.startsWith('data:image')) delete row.image; // skip base64
+        return row;
+      });
+      await sbFetch(table, 'POST', rows);
+    }
   } catch(e) {
-    console.warn('Sheets sync failed (offline?):', e);
+    console.warn('Supabase sync failed (offline?):', e);
   }
 }
 
-function save()           { syncToSheets('tasks',    logs);           }
-function saveMeetings()   { syncToSheets('meetings', meetings);       }
+function save() {
+  localStorage.setItem('workLogs', JSON.stringify(logs));
+  syncToSheets('tasks', logs);
+}
+function saveMeetings() {
+  localStorage.setItem('workMeetings', JSON.stringify(meetings));
+  syncToSheets('meetings', meetings);
+}
 
 
 // ─────────────────────────────────────────────────────────────────────
@@ -1100,7 +1141,10 @@ document.addEventListener('keydown', e => {
 
 let wins = [];
 
-function saveWins()         { syncToSheets('wins',     wins);           }
+function saveWins() {
+  localStorage.setItem('workWins', JSON.stringify(wins));
+  syncToSheets('wins', wins);
+}
 
 function logWin() {
   const text   = document.getElementById('winText').value.trim();
@@ -1243,7 +1287,10 @@ const PROJECT_SEED = {
   "CC&E":                  { description: "", role: "", contacts: "", notes: "", status: "Active" }
 };
 
-function saveProjectDetails() { syncToSheets('projects', projectDetails); }
+function saveProjectDetails() {
+  localStorage.setItem('projectDetails', JSON.stringify(projectDetails));
+  syncToSheets('projects', projectDetails);
+}
 
 // Build a card for each project dynamically
 function buildProjectCards() {
@@ -1367,42 +1414,43 @@ function updateExportBtn() {
 // ─────────────────────────────────────────────────────────────────────
 
 async function loadFromSheets() {
-  if (!SCRIPT_URL || SCRIPT_URL === 'YOUR_APPS_SCRIPT_URL_HERE') {
-    // Not connected yet — render empty state
-    initRender();
-    return;
-  }
+  // Step 1: Load from localStorage instantly so UI is never blank on reload
+  logs           = JSON.parse(localStorage.getItem('workLogs')       || '[]');
+  meetings       = JSON.parse(localStorage.getItem('workMeetings')   || '[]');
+  wins           = JSON.parse(localStorage.getItem('workWins')       || '[]');
+  projectDetails = JSON.parse(localStorage.getItem('projectDetails') || '{}');
+  initRender(); // render immediately from local data
 
-  // Show a subtle loading indicator in the header
-  const sub = document.querySelector('.subtitle');
-  const originalText = sub.textContent;
-  sub.textContent = 'Loading your data…';
-
-  // file:// protocol blocks network requests — user needs to open via Google Drive or a server
-  if (window.location.protocol === 'file:') {
-    sub.textContent = '⚠ Open via Google Drive to sync — working offline for now';
-    setTimeout(() => sub.textContent = originalText, 5000);
-    initRender();
-    return;
-  }
-
+  // Step 2: Fetch from Supabase in background and merge if newer
   try {
-    const res  = await fetch(SCRIPT_URL + '?action=load');
-    const data = await res.json();
+    const [dbTasks, dbMeetings, dbWins, dbProjects] = await Promise.all([
+      sbFetch('tasks?order=id.desc',    'GET'),
+      sbFetch('meetings?order=id.desc', 'GET'),
+      sbFetch('wins?order=id.desc',     'GET'),
+      sbFetch('projects',               'GET')
+    ]);
 
-    if (data.tasks)    logs           = data.tasks;
-    if (data.meetings) meetings       = data.meetings;
-    if (data.wins)     wins           = data.wins;
-    if (data.projects && Object.keys(data.projects).length > 0) projectDetails = data.projects;
+    let updated = false;
+
+    if (dbTasks    && dbTasks.length    > logs.length)     { logs     = dbTasks;    localStorage.setItem('workLogs',     JSON.stringify(logs));     updated = true; }
+    if (dbMeetings && dbMeetings.length > meetings.length) { meetings = dbMeetings.map(r => { if(r.loggedat){r.loggedAt=r.loggedat; delete r.loggedat;} return r; }); localStorage.setItem('workMeetings', JSON.stringify(meetings)); updated = true; }
+    if (dbWins     && dbWins.length     > wins.length)     { wins     = dbWins.map(r => { if(r.loggedat){r.loggedAt=r.loggedat; delete r.loggedat;} return r; });     localStorage.setItem('workWins',     JSON.stringify(wins));     updated = true; }
+
+    if (dbProjects && dbProjects.length > 0) {
+      const proj = {};
+      dbProjects.forEach(r => proj[r.name] = r.details);
+      if (Object.keys(proj).length > Object.keys(projectDetails).length) {
+        projectDetails = proj;
+        localStorage.setItem('projectDetails', JSON.stringify(projectDetails));
+        updated = true;
+      }
+    }
+
+    if (updated) initRender();
 
   } catch(e) {
-    console.warn('Could not load from Sheets:', e);
-    sub.textContent = '⚠ Could not connect to Sheets — working offline';
-    setTimeout(() => sub.textContent = originalText, 4000);
+    console.warn('Supabase load failed — using local data:', e);
   }
-
-  sub.textContent = originalText;
-  initRender();
 }
 
 // Called after data is loaded (or failed to load) — renders everything
