@@ -1,0 +1,1472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Work Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0f0f0f;
+    --surface: #1a1a1a;
+    --surface2: #222222;
+    --border: #2e2e2e;
+    --accent: #FF4E00;
+    --accent-soft: rgba(255,78,0,0.12);
+    --text: #f0ede8;
+    --text-muted: #7a7570;
+    --text-dim: #4a4845;
+    --green: #4ade80;
+    --green-soft: rgba(74,222,128,0.1);
+    --blue: #60a5fa;
+    --blue-soft: rgba(96,165,250,0.1);
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    padding: 40px 24px;
+  }
+
+  header { max-width: 780px; margin: 0 auto 36px; }
+
+  .eyebrow {
+    font-size: 11px; font-weight: 500; letter-spacing: 0.15em;
+    text-transform: uppercase; color: var(--accent); margin-bottom: 10px;
+  }
+
+  h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(28px, 5vw, 42px);
+    font-weight: 800; line-height: 1.1; margin-bottom: 8px;
+  }
+
+  .subtitle { font-size: 14px; color: var(--text-muted); font-weight: 300; }
+
+  .stats-bar {
+    max-width: 780px; margin: 0 auto 32px;
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(130px,1fr)); gap: 12px;
+  }
+
+  .stat-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 16px 18px;
+  }
+
+  .stat-num {
+    font-family: 'Syne', sans-serif; font-size: 28px;
+    font-weight: 800; color: var(--text);
+  }
+
+  .stat-label {
+    font-size: 11px; color: var(--text-muted); margin-top: 2px;
+    text-transform: uppercase; letter-spacing: 0.08em;
+  }
+
+  .stat-card.accent .stat-num { color: var(--accent); }
+  .stat-card.green  .stat-num { color: var(--green); }
+  .stat-card.blue   .stat-num { color: var(--blue); }
+
+  /* Tabs */
+  .tabs {
+    max-width: 780px; margin: 0 auto 28px;
+    display: flex; gap: 4px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .tab-btn {
+    padding: 10px 20px;
+    font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500;
+    border: none; background: none; color: var(--text-muted);
+    cursor: pointer; border-bottom: 2px solid transparent;
+    margin-bottom: -1px; transition: all 0.15s;
+  }
+
+  .tab-btn:hover { color: var(--text); }
+  .tab-btn.active { color: var(--text); border-bottom-color: var(--accent); }
+
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  .log-form {
+    max-width: 780px; margin: 0 auto 40px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 16px; padding: 28px;
+  }
+
+  .form-label {
+    display: block; font-size: 11px; font-weight: 500;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--text-muted); margin-bottom: 10px;
+  }
+
+  .project-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+
+  .chip {
+    padding: 7px 14px; border-radius: 100px; font-size: 13px; font-weight: 500;
+    border: 1px solid var(--border); background: var(--surface2);
+    color: var(--text-muted); cursor: pointer; transition: all 0.15s; user-select: none;
+  }
+
+  .chip:hover { border-color: var(--accent); color: var(--text); }
+  .chip.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+  .task-input, .text-input {
+    width: 100%; background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 10px; padding: 14px 16px; color: var(--text);
+    font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 300;
+    outline: none; transition: border-color 0.15s; margin-bottom: 16px;
+  }
+
+  .task-input { resize: none; height: 80px; }
+  .text-input  { resize: none; height: 72px; }
+
+  .task-input::placeholder, .text-input::placeholder { color: var(--text-dim); }
+  .task-input:focus, .text-input:focus { border-color: var(--accent); }
+
+  .input-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media(max-width:520px) { .input-row { grid-template-columns: 1fr; } }
+
+  .form-row { display: flex; gap: 10px; align-items: center; margin-bottom: 20px; flex-wrap: wrap; }
+
+  .status-btn {
+    padding: 7px 14px; border-radius: 100px; font-size: 12px; font-weight: 500;
+    border: 1px solid var(--border); background: transparent;
+    color: var(--text-muted); cursor: pointer; transition: all 0.15s;
+  }
+
+  .status-btn:hover { border-color: #fff3; color: var(--text); }
+  .status-btn.active-status { border-color: currentColor; }
+  .status-btn[data-s="In Progress"].active-status { color:#facc15; border-color:#facc15; background:rgba(250,204,21,0.08); }
+  .status-btn[data-s="Done"].active-status        { color:var(--green); border-color:var(--green); background:var(--green-soft); }
+  .status-btn[data-s="Blocked"].active-status     { color:#f87171; border-color:#f87171; background:rgba(248,113,113,0.08); }
+
+  .submit-btn {
+    width: 100%; padding: 14px; background: var(--accent); color: #fff;
+    border: none; border-radius: 10px;
+    font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700;
+    letter-spacing: 0.04em; cursor: pointer; transition: opacity 0.15s, transform 0.1s;
+  }
+
+  .submit-btn:hover  { opacity: 0.88; }
+  .submit-btn:active { transform: scale(0.99); }
+
+  .section-header {
+    max-width: 780px; margin: 0 auto 20px;
+    display: flex; align-items: baseline; justify-content: space-between;
+  }
+
+  .section-title { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 700; }
+  .entry-count   { font-size: 12px; color: var(--text-muted); }
+
+  .filter-bar {
+    max-width: 780px; margin: 0 auto 20px;
+    display: flex; gap: 8px; flex-wrap: wrap;
+  }
+
+  .filter-chip {
+    padding: 5px 12px; border-radius: 100px; font-size: 12px;
+    border: 1px solid var(--border); background: transparent;
+    color: var(--text-muted); cursor: pointer; transition: all 0.15s;
+  }
+
+  .filter-chip:hover { color: var(--text); border-color: #fff3; }
+  .filter-chip.active-filter { border-color: var(--accent); color: var(--accent); }
+
+  .entries {
+    max-width: 780px; margin: 0 auto;
+    display: flex; flex-direction: column; gap: 10px;
+  }
+
+  .entry {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 18px 20px;
+    display: grid; grid-template-columns: 1fr auto;
+    gap: 8px; align-items: start; animation: slideIn 0.2s ease;
+  }
+
+  @keyframes slideIn {
+    from { opacity:0; transform:translateY(-6px); }
+    to   { opacity:1; transform:translateY(0); }
+  }
+
+  .entry-project {
+    font-size: 10px; font-weight: 600; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--accent); margin-bottom: 5px;
+  }
+
+  .entry.meeting-entry .entry-project { color: var(--blue); }
+
+  .entry-text  { font-size: 14px; color: var(--text); font-weight: 300; line-height: 1.5; }
+  .entry-meta  { font-size: 11px; color: var(--text-dim); margin-top: 6px; }
+
+  .meeting-detail {
+    margin-top: 10px; padding-top: 10px;
+    border-top: 1px solid var(--border);
+    display: flex; flex-direction: column; gap: 8px;
+  }
+
+  .meeting-detail-row { display: flex; gap: 10px; align-items: flex-start; }
+
+  .meeting-detail-label {
+    font-size: 10px; font-weight: 600; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--text-dim);
+    min-width: 78px; padding-top: 2px; flex-shrink: 0;
+  }
+
+  .meeting-detail-value { font-size: 13px; color: var(--text-muted); font-weight: 300; line-height: 1.55; }
+
+  .entry-right { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+
+  .badge { padding: 3px 10px; border-radius: 100px; font-size: 11px; font-weight: 500; white-space: nowrap; }
+  .badge-inprogress { background:rgba(250,204,21,0.12); color:#facc15; }
+  .badge-done       { background:var(--green-soft); color:var(--green); }
+  .badge-blocked    { background:rgba(248,113,113,0.1); color:#f87171; }
+  .badge-meeting       { background:var(--blue-soft); color:var(--blue); }
+
+  .delete-btn {
+    background: none; border: 1px solid var(--border); border-radius: 6px;
+    color: var(--text-dim); cursor: pointer;
+    font-size: 11px; font-family: 'DM Sans', sans-serif; font-weight: 500;
+    padding: 4px 9px; transition: all 0.15s; white-space: nowrap;
+  }
+
+  .delete-btn:hover { border-color: #f871714d; color: #f87171; }
+
+  .delete-confirm { display: flex; align-items: center; gap: 6px; animation: slideIn 0.15s ease; }
+  .delete-confirm span { font-size: 11px; color: var(--text-muted); }
+
+  .confirm-yes {
+    padding: 4px 10px; border-radius: 6px;
+    border: 1px solid #f87171; background: rgba(248,113,113,0.1); color: #f87171;
+    font-size: 11px; font-family: 'DM Sans', sans-serif; font-weight: 500;
+    cursor: pointer; transition: all 0.15s;
+  }
+  .confirm-yes:hover { background: rgba(248,113,113,0.2); }
+
+  .confirm-no {
+    padding: 4px 10px; border-radius: 6px;
+    border: 1px solid var(--border); background: transparent; color: var(--text-muted);
+    font-size: 11px; font-family: 'DM Sans', sans-serif; font-weight: 500;
+    cursor: pointer; transition: all 0.15s;
+  }
+  .confirm-no:hover { color: var(--text); border-color: #fff3; }
+
+  .empty {
+    text-align: center; padding: 60px 20px;
+    color: var(--text-dim); font-size: 14px; font-style: italic;
+  }
+
+  /* Export */
+  .header-row {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    gap: 16px; flex-wrap: wrap;
+  }
+  .export-btn {
+    padding: 9px 18px; border-radius: 8px;
+    border: none; background: var(--accent);
+    color: #fff; font-family: 'Syne', sans-serif;
+    font-size: 12px; font-weight: 700; cursor: pointer;
+    transition: opacity 0.15s, transform 0.1s; white-space: nowrap; margin-top: 6px;
+    letter-spacing: 0.04em;
+  }
+  .export-btn:not(:disabled):hover  { opacity: 0.88; }
+  .export-btn:not(:disabled):active { transform: scale(0.98); }
+  .export-btn:disabled {
+    background: var(--surface2); color: var(--text-dim);
+    border: 1px solid var(--border); cursor: not-allowed; opacity: 1;
+  }
+  .export-toast {
+    position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%);
+    background: var(--surface); border: 1px solid var(--border);
+    color: var(--text); font-size: 13px; padding: 10px 20px;
+    border-radius: 100px; opacity: 0; pointer-events: none;
+    transition: opacity 0.2s; z-index: 100; white-space: nowrap;
+  }
+  .export-toast.show { opacity: 1; }
+
+  /* Projects grid */
+  .projects-grid {
+    max-width: 780px; margin: 0 auto;
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 14px;
+  }
+
+  .project-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; overflow: hidden;
+    transition: border-color 0.15s;
+  }
+
+  .project-card:focus-within { border-color: #ffffff22; }
+
+  .project-card-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 20px; cursor: pointer; user-select: none;
+    border-bottom: 1px solid transparent; transition: border-color 0.15s;
+  }
+
+  .project-card.open .project-card-header { border-bottom-color: var(--border); }
+
+  .project-card-name {
+    font-family: 'Syne', sans-serif; font-weight: 700; font-size: 14px;
+  }
+
+  .project-card-toggle {
+    font-size: 11px; color: var(--text-dim); transition: transform 0.2s;
+  }
+
+  .project-card.open .project-card-toggle { transform: rotate(180deg); }
+
+  .project-card-body {
+    display: none; padding: 20px;
+    flex-direction: column; gap: 14px;
+  }
+
+  .project-card.open .project-card-body { display: flex; }
+
+  .project-field label {
+    display: block; font-size: 10px; font-weight: 600;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--text-dim); margin-bottom: 6px;
+  }
+
+  .project-field textarea, .project-field select {
+    width: 100%; background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 10px 12px; color: var(--text);
+    font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 300;
+    outline: none; resize: none; transition: border-color 0.15s;
+  }
+
+  .project-field textarea:focus,
+  .project-field select:focus { border-color: var(--accent); }
+
+  .project-field select { height: 40px; cursor: pointer; color-scheme: dark; }
+
+  .project-status-row { display: flex; gap: 8px; flex-wrap: wrap; }
+
+  .p-status-btn {
+    padding: 5px 12px; border-radius: 100px; font-size: 11px; font-weight: 500;
+    border: 1px solid var(--border); background: transparent;
+    color: var(--text-muted); cursor: pointer; transition: all 0.15s;
+  }
+
+  .p-status-btn:hover { border-color: #fff3; color: var(--text); }
+  .p-status-btn.ps-active { border-color: currentColor; }
+  .p-status-btn[data-ps="Active"].ps-active       { color:#4ade80; border-color:#4ade80; background:rgba(74,222,128,0.08); }
+  .p-status-btn[data-ps="On Hold"].ps-active      { color:#facc15; border-color:#facc15; background:rgba(250,204,21,0.08); }
+  .p-status-btn[data-ps="Completed"].ps-active    { color:#60a5fa; border-color:#60a5fa; background:rgba(96,165,250,0.08); }
+  .p-status-btn[data-ps="Not Started"].ps-active  { color:#7a7570; border-color:#7a7570; background:rgba(122,117,112,0.08); }
+
+  .project-save-btn {
+    align-self: flex-end; padding: 8px 18px;
+    background: var(--accent); color: #fff; border: none;
+    border-radius: 8px; font-family: 'Syne', sans-serif;
+    font-size: 12px; font-weight: 700; letter-spacing: 0.04em;
+    cursor: pointer; transition: opacity 0.15s;
+  }
+  .project-save-btn:hover { opacity: 0.85; }
+
+  .project-saved-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--green); display: none; margin-left: 8px;
+    flex-shrink: 0; margin-top: 2px;
+  }
+  .project-card.has-data .project-saved-dot { display: inline-block; }
+
+
+  /* ── Screenshot upload zone ── */
+  .upload-zone {
+    border: 1px dashed var(--border); border-radius: 10px;
+    padding: 16px; text-align: center; cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+    margin-bottom: 16px; position: relative;
+  }
+  .upload-zone:hover, .upload-zone.drag-over {
+    border-color: var(--accent); background: var(--accent-soft);
+  }
+  .upload-zone input[type=file] {
+    position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+  }
+  .upload-zone-label {
+    font-size: 12px; color: var(--text-dim); pointer-events: none;
+  }
+  .upload-zone-label span { color: var(--accent); }
+
+  /* Preview strip shown after image selected */
+  .img-preview-wrap {
+    position: relative; display: inline-block; margin-bottom: 16px;
+  }
+  .img-preview {
+    max-height: 120px; max-width: 100%; border-radius: 8px;
+    border: 1px solid var(--border); display: block;
+  }
+  .img-preview-remove {
+    position: absolute; top: -8px; right: -8px;
+    width: 22px; height: 22px; border-radius: 50%;
+    background: #f87171; color: #fff; border: none;
+    font-size: 12px; cursor: pointer; line-height: 22px;
+    text-align: center; font-weight: 700;
+  }
+
+  /* Thumbnail on logged entry card */
+  .entry-thumb {
+    width: 56px; height: 56px; object-fit: cover;
+    border-radius: 6px; border: 1px solid var(--border);
+    cursor: pointer; transition: opacity 0.15s; flex-shrink: 0;
+  }
+  .entry-thumb:hover { opacity: 0.8; }
+
+  /* Lightbox */
+  .lightbox {
+    display: none; position: fixed; inset: 0; z-index: 1000;
+    background: rgba(0,0,0,0.88); align-items: center; justify-content: center;
+    padding: 24px;
+  }
+  .lightbox.open { display: flex; }
+  .lightbox img {
+    max-width: 100%; max-height: 90vh;
+    border-radius: 10px; border: 1px solid var(--border);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+  }
+  .lightbox-close {
+    position: fixed; top: 20px; right: 24px;
+    background: var(--surface); border: 1px solid var(--border);
+    color: var(--text); width: 36px; height: 36px;
+    border-radius: 50%; font-size: 18px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s;
+  }
+  .lightbox-close:hover { background: var(--surface2); }
+
+
+  /* Wins */
+  .entry.win-entry .entry-project { color: #a78bfa; }
+  .badge-win { background: rgba(167,139,250,0.12); color: #a78bfa; }
+
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-row">
+    <div>
+      <h1>My Work Log</h1>
+      <p class="subtitle">The laziest way to track what you're actually doing.</p>
+    </div>
+    <button id="exportBtn" class="export-btn" onclick="exportCSV()">⬇ Export</button>
+  </div>
+</header>
+
+<div class="export-toast" id="exportToast">✓ CSV downloaded — paste it into Claude!</div>
+
+<div class="stats-bar">
+  <div class="stat-card accent">
+    <div class="stat-num" id="statTotal">0</div>
+    <div class="stat-label">Task Logs</div>
+  </div>
+  <div class="stat-card green">
+    <div class="stat-num" id="statDone">0</div>
+    <div class="stat-label">Done</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-num" id="statProgress">0</div>
+    <div class="stat-label">In Progress</div>
+  </div>
+  <div class="stat-card blue">
+    <div class="stat-num" id="statMeetings">0</div>
+    <div class="stat-label">Meetings Logged</div>
+  </div>
+  <div class="stat-card" style="border-color:#a78bfa33">
+    <div class="stat-num" id="statWins" style="color:#a78bfa">0</div>
+    <div class="stat-label">Wins</div>
+  </div>
+</div>
+
+<!-- Tabs: clicking switches which panel is visible -->
+<div class="tabs">
+  <button class="tab-btn active" onclick="switchTab('tasks', this)">📋 Tasks</button>
+  <button class="tab-btn"       onclick="switchTab('meetings', this)">📅 Meetings</button>
+  <button class="tab-btn"       onclick="switchTab('wins', this)">🏆 Wins</button>
+  <button class="tab-btn"       onclick="switchTab('projects', this)">🗂 Projects</button>
+</div>
+
+<!-- TASKS PANEL -->
+<div class="panel active" id="panel-tasks">
+  <div class="log-form">
+    <label class="form-label">Which project?</label>
+    <div class="project-grid" id="taskProjectChips"></div>
+
+    <label class="form-label">What did you do / need to do?</label>
+    <textarea class="task-input" id="taskInput" placeholder="e.g. Redesigned the PRIA homepage chips to be interactive…"></textarea>
+
+    <div class="input-row" style="margin-bottom:0">
+      <div>
+        <label class="form-label">Date</label>
+        <input type="date" class="text-input" id="taskDate" style="height:48px; color-scheme:dark; margin-bottom:16px">
+      </div>
+      <div></div>
+    </div>
+
+    <label class="form-label" style="margin-bottom:10px">Status</label>
+    <div class="form-row" id="statusRow">
+      <button class="status-btn active-status" data-s="In Progress">🟡 In Progress</button>
+      <button class="status-btn" data-s="Done">✅ Done</button>
+      <button class="status-btn" data-s="Blocked">🔴 Blocked</button>
+    </div>
+
+    <label class="form-label">Screenshot <span style="color:var(--text-dim);font-size:10px;text-transform:none;letter-spacing:0">(optional)</span></label>
+    <div class="upload-zone" id="taskUploadZone">
+      <input type="file" id="taskImageInput" accept="image/*"
+        onchange="handleImageSelect('taskImageInput','taskPreview','taskUploadZone')">
+      <p class="upload-zone-label">Click or drag & drop — <span>attach a screenshot</span></p>
+    </div>
+    <div id="taskPreview" style="display:none">
+      <div class="img-preview-wrap">
+        <img class="img-preview" id="taskPreviewImg" src="" alt="Preview">
+        <button class="img-preview-remove" onclick="clearImage('task')" title="Remove">✕</button>
+      </div>
+    </div>
+
+    <button class="submit-btn" onclick="logTask()">+ Log task</button>
+  </div>
+
+  <div class="section-header">
+    <span class="section-title">Activity Log</span>
+    <span class="entry-count" id="taskCount"></span>
+  </div>
+
+  <div class="filter-bar" id="taskFilterBar"></div>
+  <div class="entries" id="taskEntries"></div>
+</div>
+
+<!-- CALLS PANEL -->
+<div class="panel" id="panel-meetings">
+  <div class="log-form">
+    <label class="form-label">Which project?</label>
+    <div class="project-grid" id="meetingProjectChips"></div>
+
+    <!-- Two-column row: participants + date -->
+    <div class="input-row">
+      <div>
+        <label class="form-label">Who was in the meeting?</label>
+        <textarea class="text-input" id="meetingPeople" style="height:48px"
+          placeholder="e.g. Sarah (PM), Lukas (Dev)…"></textarea>
+      </div>
+      <div>
+        <label class="form-label">Date of meeting</label>
+        <!-- type="date" renders a native browser date picker — no JS needed for that part -->
+        <input type="date" class="text-input" id="meetingDate" style="height:48px; color-scheme:dark">
+      </div>
+    </div>
+
+    <label class="form-label">What was discussed?</label>
+    <textarea class="text-input" id="meetingDiscussed"
+      placeholder="e.g. Reviewed homepage prototype, aligned on chip interaction pattern…"></textarea>
+
+    <label class="form-label">What was concluded / next steps?</label>
+    <textarea class="text-input" id="meetingConclusion"
+      placeholder="e.g. Yinks to share updated Figma by Friday. Team to review async."></textarea>
+
+    <label class="form-label">Screenshot <span style="color:var(--text-dim);font-size:10px;text-transform:none;letter-spacing:0">(optional)</span></label>
+    <div class="upload-zone" id="meetingUploadZone">
+      <input type="file" id="meetingImageInput" accept="image/*"
+        onchange="handleImageSelect('meetingImageInput','meetingPreview','meetingUploadZone')">
+      <p class="upload-zone-label">Click or drag & drop — <span>attach a screenshot</span></p>
+    </div>
+    <div id="meetingPreview" style="display:none">
+      <div class="img-preview-wrap">
+        <img class="img-preview" id="meetingPreviewImg" src="" alt="Preview">
+        <button class="img-preview-remove" onclick="clearImage('meeting')" title="Remove">✕</button>
+      </div>
+    </div>
+
+    <button class="submit-btn" onclick="logMeeting()">+ Log meeting</button>
+  </div>
+
+  <div class="section-header">
+    <span class="section-title">Meeting Log</span>
+    <span class="entry-count" id="meetingCount"></span>
+  </div>
+
+  <div class="filter-bar" id="meetingFilterBar"></div>
+  <div class="entries" id="meetingEntries"></div>
+</div>
+
+
+<!-- WINS PANEL -->
+<div class="panel" id="panel-wins">
+  <div class="log-form">
+    <label class="form-label">Which project?</label>
+    <div class="project-grid" id="winProjectChips"></div>
+
+    <label class="form-label">What was the win?</label>
+    <textarea class="task-input" id="winText"
+      placeholder="e.g. Stakeholders approved the new PRIA homepage design in first review…"></textarea>
+
+    <div class="input-row">
+      <div>
+        <label class="form-label">Who was involved / who noticed?</label>
+        <textarea class="text-input" id="winPeople" style="height:48px"
+          placeholder="e.g. PM Sarah, Head of Procurement…"></textarea>
+      </div>
+      <div>
+        <label class="form-label">Date</label>
+        <input type="date" class="text-input" id="winDate" style="height:48px; color-scheme:dark">
+      </div>
+    </div>
+
+    <label class="form-label">Screenshot <span style="color:var(--text-dim);font-size:10px;text-transform:none;letter-spacing:0">(optional)</span></label>
+    <div class="upload-zone" id="winUploadZone">
+      <input type="file" id="winImageInput" accept="image/*"
+        onchange="handleImageSelect('winImageInput','winPreview','winUploadZone')">
+      <p class="upload-zone-label">Click or drag & drop — <span>attach a screenshot</span></p>
+    </div>
+    <div id="winPreview" style="display:none">
+      <div class="img-preview-wrap">
+        <img class="img-preview" id="winPreviewImg" src="" alt="Preview">
+        <button class="img-preview-remove" onclick="clearImage('win')" title="Remove">✕</button>
+      </div>
+    </div>
+
+    <button class="submit-btn" style="background:#a78bfa" onclick="logWin()">🏆 Log win</button>
+  </div>
+
+  <div class="section-header">
+    <span class="section-title">Wins Log</span>
+    <span class="entry-count" id="winCount"></span>
+  </div>
+
+  <div class="filter-bar" id="winFilterBar"></div>
+  <div class="entries" id="winEntries"></div>
+</div>
+
+
+<!-- PROJECTS PANEL -->
+<div class="panel" id="panel-projects">
+  <div class="projects-grid" id="projectsGrid"></div>
+</div>
+
+
+<script>
+// ─────────────────────────────────────────────────────────────────────
+// DATA — two separate lists, two separate localStorage keys
+// ─────────────────────────────────────────────────────────────────────
+
+const PROJECTS = [
+  "Procurement Companion", "Slovenia GMT4", "Stein Exception",
+  "OSMP", "ALCM", "Product Dashboard", "KPI Store", "CTC Dashboard", "CC&E"
+];
+
+let logs     = [];
+let meetings = [];
+
+let selectedTaskProject = null;
+let selectedWinProject  = null;
+let activeWinFilter     = "All";
+let pendingTaskImage    = null;  // base64 string of selected image, or null
+let pendingMeetingImage = null;
+let pendingWinImage     = null;
+let selectedMeetingProject = null;
+let selectedStatus      = "In Progress";
+let activeTaskFilter    = "All";
+let activeMeetingFilter    = "All";
+
+
+// ─────────────────────────────────────────────────────────────────────
+// TABS
+// Shows one panel at a time by toggling the "active" CSS class.
+// CSS rule: .panel { display:none } and .panel.active { display:block }
+// ─────────────────────────────────────────────────────────────────────
+
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p  => p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('panel-' + name).classList.add('active');
+}
+
+
+// ─────────────────────────────────────────────────────────────────────
+// CHIPS — reusable helper to avoid repeating the same code twice
+// containerId : the div to put chips into
+// onSelect    : a callback function — called with the project name when clicked
+// ─────────────────────────────────────────────────────────────────────
+
+function buildChips(containerId, onSelect) {
+  const container = document.getElementById(containerId);
+  PROJECTS.forEach(p => {
+    const chip = document.createElement('button');
+    chip.className   = 'chip';
+    chip.textContent = p;
+    chip.addEventListener('click', () => {
+      container.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      onSelect(p);
+    });
+    container.appendChild(chip);
+  });
+}
+
+buildChips('taskProjectChips', p => selectedTaskProject = p);
+buildChips('meetingProjectChips', p => selectedMeetingProject = p);
+
+
+// ─────────────────────────────────────────────────────────────────────
+// STATUS BUTTONS (tasks only)
+// ─────────────────────────────────────────────────────────────────────
+
+document.getElementById('statusRow').querySelectorAll('.status-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.status-btn').forEach(b => b.classList.remove('active-status'));
+    btn.classList.add('active-status');
+    selectedStatus = btn.dataset.s;
+  });
+});
+
+
+// ─────────────────────────────────────────────────────────────────────
+// FILTER BAR — reusable helper
+// barId   : which filter bar div to build into
+// dataset : the array to scan for used project names
+// onFilter: callback when a filter is clicked
+// ─────────────────────────────────────────────────────────────────────
+
+function buildFilterBar(barId, dataset, onFilter) {
+  const bar = document.getElementById(barId);
+  bar.innerHTML = `<button class="filter-chip active-filter" data-f="All">All</button>`;
+
+  const used = [...new Set(dataset.map(l => l.project))];
+  used.forEach(p => {
+    const btn = document.createElement('button');
+    btn.className   = 'filter-chip';
+    btn.dataset.f   = p;
+    btn.textContent = p;
+    bar.appendChild(btn);
+  });
+
+  bar.querySelectorAll('.filter-chip').forEach(btn => {
+    btn.addEventListener('click', () => {
+      bar.querySelectorAll('.filter-chip').forEach(b => b.classList.remove('active-filter'));
+      btn.classList.add('active-filter');
+      onFilter(btn.dataset.f);
+    });
+  });
+}
+
+
+// ─────────────────────────────────────────────────────────────────────
+// LOG A TASK
+// ─────────────────────────────────────────────────────────────────────
+
+function logTask() {
+  const text = document.getElementById('taskInput').value.trim();
+  if (!selectedTaskProject) { alert('Pick a project first!'); return; }
+  if (!text)                 { alert('Write something you did or need to do!'); return; }
+
+  logs.unshift({
+    id:      Date.now(),
+    project: selectedTaskProject,
+    text,
+    status:  selectedStatus,
+    date:    (() => {
+      const v = document.getElementById('taskDate').value;
+      return v
+        ? new Date(v + 'T12:00:00').toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' })
+        : new Date().toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
+    })(),
+    time:    new Date().toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' }),
+    image:   pendingTaskImage || null  // null if no screenshot attached
+  });
+
+  save();
+
+  document.getElementById('taskInput').value = '';
+  document.getElementById('taskProjectChips').querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+  selectedTaskProject = null;
+  clearImage('task');
+
+  renderTasks();
+  buildFilterBar('taskFilterBar', logs, f => { activeTaskFilter = f; renderTasks(); });
+  updateExportBtn();
+}
+
+
+// ─────────────────────────────────────────────────────────────────────
+// LOG A CALL
+// ─────────────────────────────────────────────────────────────────────
+
+function logMeeting() {
+  const people     = document.getElementById('meetingPeople').value.trim();
+  const discussed  = document.getElementById('meetingDiscussed').value.trim();
+  const conclusion = document.getElementById('meetingConclusion').value.trim();
+  const dateVal    = document.getElementById('meetingDate').value;
+
+  if (!selectedMeetingProject) { alert('Pick a project first!'); return; }
+  if (!people)               { alert('Who was in the meeting?'); return; }
+  if (!discussed)            { alert('What was discussed?'); return; }
+
+  // Format the chosen date, or fall back to today
+  const displayDate = dateVal
+    ? new Date(dateVal + 'T12:00:00').toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' })
+    : new Date().toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
+
+  meetings.unshift({
+    id:         Date.now(),
+    project:    selectedMeetingProject,
+    people,
+    discussed,
+    conclusion: conclusion || '—',  // dash if user left it blank
+    date:       displayDate,
+    loggedAt:   new Date().toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' }),
+    image:      pendingMeetingImage || null
+  });
+
+  saveMeetings();
+
+  // Reset form
+  ['meetingPeople','meetingDiscussed','meetingConclusion'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('meetingDate').value = new Date().toISOString().slice(0,10);
+  document.getElementById('meetingProjectChips').querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+  selectedMeetingProject = null;
+  clearImage('meeting');
+
+  renderMeetings();
+  buildFilterBar('meetingFilterBar', meetings, f => { activeMeetingFilter = f; renderMeetings(); });
+  updateExportBtn();
+}
+
+
+// ─────────────────────────────────────────────────────────────────────
+// DELETE — two-step, works for both tasks and meetings
+// type = 'task' or 'meeting' so we know which list to touch
+// ─────────────────────────────────────────────────────────────────────
+
+function askDelete(id, type) {
+  const btn = document.querySelector(`.delete-btn[data-id="${id}"]`);
+  if (!btn) return;
+  btn.outerHTML = `
+    <div class="delete-confirm">
+      <span>Remove?</span>
+      <button class="confirm-yes" onclick="confirmDelete(${id},'${type}')">Yes</button>
+      <button class="confirm-no"  onclick="cancelDelete('${type}')">No</button>
+    </div>`;
+}
+
+function confirmDelete(id, type) {
+  if (type === 'task') {
+    logs = logs.filter(l => l.id !== id);
+    save();
+    renderTasks();
+    buildFilterBar('taskFilterBar', logs, f => { activeTaskFilter = f; renderTasks(); });
+  } else if (type === 'meeting') {
+    meetings = meetings.filter(c => c.id !== id);
+    saveMeetings();
+    renderMeetings();
+    buildFilterBar('meetingFilterBar', meetings, f => { activeMeetingFilter = f; renderMeetings(); });
+  } else {
+    wins = wins.filter(w => w.id !== id);
+    saveWins();
+    renderWins();
+    buildFilterBar('winFilterBar', wins, f => { activeWinFilter = f; renderWins(); });
+  }
+  updateExportBtn();
+}
+
+function cancelDelete(type) {
+  if (type === 'task')         renderTasks();
+  else if (type === 'meeting') renderMeetings();
+  else                         renderWins();
+}
+
+
+// ─────────────────────────────────────────────────────────────────────
+// SAVE
+// ─────────────────────────────────────────────────────────────────────
+
+// ─────────────────────────────────────────────────────────────────────
+// GOOGLE SHEETS SYNC
+// All save functions POST data to your Apps Script web app URL.
+// The Apps Script then writes/overwrites the relevant sheet tab.
+// SCRIPT_URL is the one URL you get after deploying your Apps Script.
+// ─────────────────────────────────────────────────────────────────────
+
+const SCRIPT_URL = 'YOUR_APPS_SCRIPT_URL_HERE'; // ← you'll replace this once
+
+// Generic sync function — sends the full dataset for a given type to Sheets.
+// We always send the full array (not just one row) so the sheet stays in sync.
+// type = 'tasks' | 'meetings' | 'wins' | 'projects'
+async function syncToSheets(type, data) {
+  if (!SCRIPT_URL || SCRIPT_URL === 'YOUR_APPS_SCRIPT_URL_HERE') return; // skip if not set up yet
+  try {
+    await fetch(SCRIPT_URL, {
+      method: 'POST',
+      // 'no-cors' means we can't read the response, but the write still happens
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type, data })
+    });
+  } catch(e) {
+    console.warn('Sheets sync failed (offline?):', e);
+    // Fail silently — data is still in memory for this session
+  }
+}
+
+function save()           { syncToSheets('tasks',    logs);           }
+function saveMeetings()   { syncToSheets('meetings', meetings);       }
+
+
+// ─────────────────────────────────────────────────────────────────────
+// RENDER TASKS
+// ─────────────────────────────────────────────────────────────────────
+
+function badgeClass(status) {
+  if (status === 'Done')    return 'badge badge-done';
+  if (status === 'Blocked') return 'badge badge-blocked';
+  return 'badge badge-inprogress';
+}
+
+function renderTasks() {
+  const container = document.getElementById('taskEntries');
+  const filtered  = activeTaskFilter === 'All' ? logs : logs.filter(l => l.project === activeTaskFilter);
+
+  document.getElementById('statTotal').textContent    = logs.length;
+  document.getElementById('statDone').textContent     = logs.filter(l => l.status === 'Done').length;
+  document.getElementById('statProgress').textContent = logs.filter(l => l.status === 'In Progress').length;
+  document.getElementById('taskCount').textContent    = `${filtered.length} entr${filtered.length === 1 ? 'y' : 'ies'}`;
+
+  if (filtered.length === 0) {
+    container.innerHTML = `<div class="empty">No tasks logged yet — you're one click away from feeling productive.</div>`;
+    return;
+  }
+
+  container.innerHTML = filtered.map(log => `
+    <div class="entry">
+      <div>
+        <div class="entry-project">${log.project}</div>
+        <div class="entry-text">${log.text}</div>
+        ${log.image ? `<img class="entry-thumb" src="${log.image}" alt="Screenshot" onclick="openLightbox('${log.id}','task')" style="margin-top:10px">` : ''}
+        <div class="entry-meta">${log.date} · ${log.time}</div>
+      </div>
+      <div class="entry-right">
+        <span class="${badgeClass(log.status)}">${log.status}</span>
+        <button class="delete-btn" data-id="${log.id}" onclick="askDelete(${log.id},'task')">Remove</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+
+// ─────────────────────────────────────────────────────────────────────
+// RENDER CALLS
+// ─────────────────────────────────────────────────────────────────────
+
+function renderMeetings() {
+  const container = document.getElementById('meetingEntries');
+  const filtered  = activeMeetingFilter === 'All' ? meetings : meetings.filter(c => c.project === activeMeetingFilter);
+
+  document.getElementById('statMeetings').textContent = meetings.length;
+  document.getElementById('meetingCount').textContent = `${filtered.length} entr${filtered.length === 1 ? 'y' : 'ies'}`;
+
+  if (filtered.length === 0) {
+    container.innerHTML = `<div class="empty">No meetings logged yet — log your first one.</div>`;
+    return;
+  }
+
+  container.innerHTML = filtered.map(meeting => `
+    <div class="entry meeting-entry">
+      <div>
+        <div class="entry-project">${meeting.project}</div>
+        <div class="entry-text" style="font-weight:400">📅 ${meeting.date}</div>
+        <div class="meeting-detail">
+          <div class="meeting-detail-row">
+            <span class="meeting-detail-label">With</span>
+            <span class="meeting-detail-value">${meeting.people}</span>
+          </div>
+          <div class="meeting-detail-row">
+            <span class="meeting-detail-label">Discussed</span>
+            <span class="meeting-detail-value">${meeting.discussed}</span>
+          </div>
+          <div class="meeting-detail-row">
+            <span class="meeting-detail-label">Concluded</span>
+            <span class="meeting-detail-value">${meeting.conclusion}</span>
+          </div>
+        </div>
+        ${meeting.image ? `<img class="entry-thumb" src="${meeting.image}" alt="Screenshot" onclick="openLightbox('${meeting.id}','meeting')" style="margin-top:10px">` : ''}
+        <div class="entry-meta" style="margin-top:10px">Logged at ${meeting.loggedAt}</div>
+      </div>
+      <div class="entry-right">
+        <span class="badge badge-meeting">Meeting</span>
+        <button class="delete-btn" data-id="${meeting.id}" onclick="askDelete(${meeting.id},'meeting')">Remove</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+
+
+
+// ─────────────────────────────────────────────────────────────────────
+// IMAGE HANDLING
+// ─────────────────────────────────────────────────────────────────────
+
+// Called when the user picks a file from the upload zone.
+// FileReader reads the image as a base64 string so we can store + display it.
+function handleImageSelect(inputId, previewWrapperId, zoneId) {
+  const input = document.getElementById(inputId);
+  const file  = input.files[0];
+  if (!file) return;
+
+  // Warn if the image is very large (>1.5MB compressed may strain localStorage)
+  if (file.size > 2 * 1024 * 1024) {
+    alert('That image is quite large (over 2MB). It might work, but consider using a smaller/cropped screenshot to keep things fast.');
+  }
+
+  const reader = new FileReader();
+  // onload fires once the file is fully read
+  reader.onload = e => {
+    const base64 = e.target.result; // looks like "data:image/png;base64,iVBORw0K..."
+
+    // Store in the right pending variable based on which form we're in
+    if (inputId === 'taskImageInput')    pendingTaskImage    = base64;
+    if (inputId === 'meetingImageInput') pendingMeetingImage = base64;
+    if (inputId === 'winImageInput')      pendingWinImage     = base64;
+
+    // Show the preview
+    const previewWrap = document.getElementById(previewWrapperId);
+    const previewImg  = document.getElementById(previewWrapperId + 'Img');
+    previewImg.src        = base64;
+    previewWrap.style.display = 'block';
+
+    // Hide the upload zone while preview is showing
+    document.getElementById(zoneId).style.display = 'none';
+  };
+
+  reader.readAsDataURL(file); // triggers the async read; onload fires when done
+}
+
+// Clears the pending image and resets the upload zone
+function clearImage(type) {
+  if (type === 'task') {
+    pendingTaskImage = null;
+    document.getElementById('taskImageInput').value        = '';
+    document.getElementById('taskPreview').style.display   = 'none';
+    document.getElementById('taskUploadZone').style.display = 'block';
+  } else if (type === 'meeting') {
+    pendingMeetingImage = null;
+    document.getElementById('meetingImageInput').value          = '';
+    document.getElementById('meetingPreview').style.display      = 'none';
+    document.getElementById('meetingUploadZone').style.display   = 'block';
+  } else {
+    pendingWinImage = null;
+    document.getElementById('winImageInput').value        = '';
+    document.getElementById('winPreview').style.display    = 'none';
+    document.getElementById('winUploadZone').style.display = 'block';
+  }
+}
+
+// Opens the lightbox with the image from a specific entry
+function openLightbox(id, type) {
+  const dataset = type === 'task' ? logs : type === 'meeting' ? meetings : wins;
+  // Find the entry by id — note: id is stored as a number (Date.now())
+  const entry = dataset.find(e => e.id === Number(id));
+  if (!entry || !entry.image) return;
+
+  document.getElementById('lightboxImg').src = entry.image;
+  document.getElementById('lightbox').classList.add('open');
+  document.body.style.overflow = 'hidden'; // prevent scrolling behind lightbox
+}
+
+// Closes the lightbox — called on button click or clicking the dark backdrop
+function closeLightbox(e) {
+  // If a click event was passed, only close if the user clicked the backdrop itself
+  // (not the image inside it), so the image doesn't close on click
+  if (e && e.target !== document.getElementById('lightbox')) return;
+  document.getElementById('lightbox').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+// Allow closing lightbox with Escape key
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeLightbox();
+});
+
+
+// ─────────────────────────────────────────────────────────────────────
+// LOG A WIN
+// ─────────────────────────────────────────────────────────────────────
+
+let wins = [];
+
+function saveWins()         { syncToSheets('wins',     wins);           }
+
+function logWin() {
+  const text   = document.getElementById('winText').value.trim();
+  const people = document.getElementById('winPeople').value.trim();
+  const dateVal= document.getElementById('winDate').value;
+
+  if (!selectedWinProject) { alert('Pick a project first!'); return; }
+  if (!text)                { alert('Describe the win!'); return; }
+
+  const displayDate = dateVal
+    ? new Date(dateVal + 'T12:00:00').toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' })
+    : new Date().toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
+
+  wins.unshift({
+    id:      Date.now(),
+    project: selectedWinProject,
+    text,
+    people:  people || '—',
+    date:    displayDate,
+    image:   pendingWinImage || null,
+    loggedAt: new Date().toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' })
+  });
+
+  saveWins();
+
+  // Reset form
+  document.getElementById('winText').value   = '';
+  document.getElementById('winPeople').value = '';
+  document.getElementById('winDate').value   = new Date().toISOString().slice(0,10);
+  document.getElementById('winProjectChips').querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+  selectedWinProject = null;
+  clearImage('win');
+
+  renderWins();
+  buildFilterBar('winFilterBar', wins, f => { activeWinFilter = f; renderWins(); });
+  updateExportBtn();
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// RENDER WINS
+// ─────────────────────────────────────────────────────────────────────
+
+function renderWins() {
+  const container = document.getElementById('winEntries');
+  const filtered  = activeWinFilter === 'All' ? wins : wins.filter(w => w.project === activeWinFilter);
+
+  document.getElementById('statWins').textContent = wins.length;
+  document.getElementById('winCount').textContent = `${filtered.length} win${filtered.length === 1 ? '' : 's'}`;
+
+  if (filtered.length === 0) {
+    container.innerHTML = `<div class="empty">No wins logged yet — you're doing better than you think. Start here.</div>`;
+    return;
+  }
+
+  container.innerHTML = filtered.map(win => `
+    <div class="entry win-entry">
+      <div>
+        <div class="entry-project">${win.project}</div>
+        <div class="entry-text" style="font-weight:500">🏆 ${win.text}</div>
+        ${win.people !== '—' ? `<div class="entry-text" style="font-size:13px;margin-top:6px;color:var(--text-muted)">👥 ${win.people}</div>` : ''}
+        ${win.image ? `<img class="entry-thumb" src="${win.image}" alt="Screenshot" onclick="openLightbox('${win.id}','win')" style="margin-top:10px">` : ''}
+        <div class="entry-meta">${win.date} · Logged at ${win.loggedAt}</div>
+      </div>
+      <div class="entry-right">
+        <span class="badge badge-win">Win</span>
+        <button class="delete-btn" data-id="${win.id}" onclick="askDelete(${win.id},'win')">Remove</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// EXPORT TO CSV
+// Converts both logs and meetings into a CSV file and triggers a download.
+// CSV = comma-separated values — a simple format Excel and Claude can read.
+// ─────────────────────────────────────────────────────────────────────
+
+function exportCSV() {
+  // Helper: wraps a value in quotes and escapes any quotes inside it
+  // This is important because some fields (like "discussed") might contain commas
+  const esc = v => `"${String(v || '').replace(/"/g, '""')}"`;
+
+  // Build the tasks section
+  // Each row is an array of values joined by commas; rows joined by newlines
+  const taskRows = [
+    ['TYPE','PROJECT','TEXT','STATUS','DATE','TIME'],
+    ...logs.map(l => ['Task', l.project, l.text, l.status, l.date, l.time])
+  ].map(r => r.map(esc).join(',')).join('\n');
+
+  // Build the meetings section
+  const meetingRows = [
+    ['TYPE','PROJECT','WITH','DATE','DISCUSSED','CONCLUDED','LOGGED_AT'],
+    ...meetings.map(m => ['Meeting', m.project, m.people, m.date, m.discussed, m.conclusion, m.loggedAt])
+  ].map(r => r.map(esc).join(',')).join('\n');
+
+  const winRows = [
+    ['TYPE','PROJECT','WIN','WHO','DATE','LOGGED_AT'],
+    ...wins.map(w => ['Win', w.project, w.text, w.people, w.date, w.loggedAt])
+  ].map(r => r.map(esc).join(',')).join('\n');
+
+  const csv = 'TASKS\n' + taskRows + '\n\nMEETINGS\n' + meetingRows + '\n\nWINS\n' + winRows;
+
+  // Create an invisible download link, click it, then remove it
+  // This is the standard browser trick for triggering file downloads from JS
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url  = URL.createObjectURL(blob);  // creates a temporary URL for the file
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = `work-log-${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);  // clean up the temporary URL
+
+  // Show a toast notification for 2.5 seconds
+  const toast = document.getElementById('exportToast');
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 2500);
+}
+
+
+// ─────────────────────────────────────────────────────────────────────
+// PROJECTS
+// Each project card stores its details in localStorage under 'projectDetails'.
+// The data is an object keyed by project name.
+// ─────────────────────────────────────────────────────────────────────
+
+// Load saved project details, or start with an empty object
+let projectDetails = {};
+
+// Seed project descriptions — only if no data loaded from Sheets yet
+// This runs after the variable is declared so no ReferenceError
+const PROJECT_SEED = {
+  "Procurement Companion": { description: "An AI-powered procurement support platform that streamlines contracting and purchasing guidance through modular agents integrated with enterprise procurement tools.", role: "", contacts: "", notes: "", status: "Active" },
+  "Slovenia GMT4":         { description: "Business-ready dashboards and standard reports to support GMT 4 stakeholder visibility and decision-making in the Slovenia context.", role: "", contacts: "", notes: "", status: "Active" },
+  "Stein Exception":       { description: "An AI solution that automates categorization of manufacturing (MES) exceptions, reducing manual QA effort and enabling root-cause analysis through structured dashboards.", role: "", contacts: "", notes: "", status: "Active" },
+  "OSMP":                  { description: "AI document generation solution supporting operational Standard Maintenance Plan monitoring, comparison, component and failure mode analysis across sites within the manufacturing ecosystem.", role: "", contacts: "", notes: "", status: "Active" },
+  "ALCM":                  { description: "Power BI dashboards providing lifecycle and maintenance KPIs to support asset performance tracking across manufacturing sites.", role: "", contacts: "", notes: "", status: "Active" },
+  "Product Dashboard":     { description: "A consolidated Power BI dashboard delivering a unified view of performance across small and large molecules brands.", role: "", contacts: "", notes: "", status: "Active" },
+  "KPI Store":             { description: "Centralized KPI reporting enabling standardized, validated Power BI reports through a shared metrics catalog.", role: "", contacts: "", notes: "", status: "Active" },
+  "CTC Dashboard":         { description: "An analytics dashboard that provides visibility into global trade compliance, enabling monitoring of trade classification accuracy, documentation status, and regulatory adherence for cross-border activities.", role: "", contacts: "", notes: "", status: "Active" },
+  "CC&E":                  { description: "", role: "", contacts: "", notes: "", status: "Active" }
+};
+
+function saveProjectDetails() { syncToSheets('projects', projectDetails); }
+
+// Build a card for each project dynamically
+function buildProjectCards() {
+  const grid = document.getElementById('projectsGrid');
+  grid.innerHTML = '';
+
+  PROJECTS.forEach(name => {
+    // Get saved details for this project, or use empty defaults
+    const d = projectDetails[name] || {};
+
+    // Each card is a self-contained div with an expandable body
+    const card = document.createElement('div');
+    card.className = 'project-card' + (d.description || d.notes || d.lead ? ' has-data' : '');
+    card.id = 'pcard-' + name.replace(/\s+/g,'_');
+
+    // Status buttons — one per option, mark the saved one as active
+    const statuses = ['Not Started','Active','On Hold','Completed'];
+    const statusBtns = statuses.map(s => {
+      const active = (d.status === s) ? ' ps-active' : '';
+      return `<button class="p-status-btn${active}" data-ps="${s}">${s}</button>`;
+    }).join('');
+
+    card.innerHTML = `
+      <div class="project-card-header" onclick="toggleCard('${name}')">
+        <div style="display:flex;align-items:center;gap:0">
+          <span class="project-card-name">${name}</span>
+          <span class="project-saved-dot"></span>
+        </div>
+        <span class="project-card-toggle">▾</span>
+      </div>
+      <div class="project-card-body">
+        <div class="project-field">
+          <label>Description</label>
+          <textarea rows="2" placeholder="What is this project about?" id="pdesc-${name.replace(/\s+/g,'_')}">${d.description || ''}</textarea>
+        </div>
+        <div class="project-field">
+          <label>My Role</label>
+          <textarea rows="1" style="height:42px" placeholder="e.g. Lead UX Designer" id="prole-${name.replace(/\s+/g,'_')}">${d.role || ''}</textarea>
+        </div>
+        <div class="project-field">
+          <label>Key Contacts</label>
+          <textarea rows="1" style="height:42px" placeholder="e.g. Sarah (PM), Lukas (Dev)" id="pcontacts-${name.replace(/\s+/g,'_')}">${d.contacts || ''}</textarea>
+        </div>
+        <div class="project-field">
+          <label>Notes / Links</label>
+          <textarea rows="2" placeholder="Figma link, Confluence page, anything useful…" id="pnotes-${name.replace(/\s+/g,'_')}">${d.notes || ''}</textarea>
+        </div>
+        <div class="project-field">
+          <label>Project Status</label>
+          <div class="project-status-row" id="pstatus-${name.replace(/\s+/g,'_')}">
+            ${statusBtns}
+          </div>
+        </div>
+        <button class="project-save-btn" onclick="saveProject('${name}')">Save</button>
+      </div>
+    `;
+
+    // Wire up status button clicks inside this card
+    // querySelectorAll finds all matching elements inside the card
+    card.querySelectorAll('.p-status-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        card.querySelectorAll('.p-status-btn').forEach(b => b.classList.remove('ps-active'));
+        btn.classList.add('ps-active');
+      });
+    });
+
+    grid.appendChild(card);
+  });
+}
+
+// Toggle a card open/closed by adding/removing the "open" CSS class
+function toggleCard(name) {
+  const card = document.getElementById('pcard-' + name.replace(/\s+/g,'_'));
+  card.classList.toggle('open');
+}
+
+// Read the form fields for a project and save to localStorage
+function saveProject(name) {
+  const key = name.replace(/\s+/g,'_');
+  const activeStatus = document.querySelector(`#pstatus-${key} .ps-active`);
+
+  projectDetails[name] = {
+    description: document.getElementById('pdesc-'     + key).value.trim(),
+    role:        document.getElementById('prole-'     + key).value.trim(),
+    contacts:    document.getElementById('pcontacts-' + key).value.trim(),
+    notes:       document.getElementById('pnotes-'    + key).value.trim(),
+    status:      activeStatus ? activeStatus.dataset.ps : ''
+  };
+
+  saveProjectDetails();
+
+  // Mark the card as having data (shows the green dot) if any field is filled
+  const card = document.getElementById('pcard-' + key);
+  const d = projectDetails[name];
+  const hasSomething = d.description || d.role || d.contacts || d.notes || d.status;
+  card.classList.toggle('has-data', !!hasSomething);
+
+  // Brief visual feedback on the save button
+  const btn = card.querySelector('.project-save-btn');
+  btn.textContent = '✓ Saved';
+  setTimeout(() => btn.textContent = 'Save', 1500);
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// INIT
+// ─────────────────────────────────────────────────────────────────────
+
+// Enable the export button only when there's at least one task or meeting.
+// Called on load and every time a log or meeting is added/deleted.
+function updateExportBtn() {
+  const btn = document.getElementById('exportBtn');
+  const hasData = logs.length > 0 || meetings.length > 0 || wins.length > 0;
+  btn.disabled = !hasData;
+  btn.title    = hasData ? '' : 'Add at least one task or meeting first';
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// LOAD FROM GOOGLE SHEETS ON STARTUP
+// On page load, fetch all data from the Apps Script.
+// Until data arrives, show a loading state.
+// ─────────────────────────────────────────────────────────────────────
+
+async function loadFromSheets() {
+  if (!SCRIPT_URL || SCRIPT_URL === 'YOUR_APPS_SCRIPT_URL_HERE') {
+    // Not connected yet — render empty state
+    initRender();
+    return;
+  }
+
+  // Show a subtle loading indicator in the header
+  const sub = document.querySelector('.subtitle');
+  const originalText = sub.textContent;
+  sub.textContent = 'Loading your data…';
+
+  // file:// protocol blocks network requests — user needs to open via Google Drive or a server
+  if (window.location.protocol === 'file:') {
+    sub.textContent = '⚠ Open via Google Drive to sync — working offline for now';
+    setTimeout(() => sub.textContent = originalText, 5000);
+    initRender();
+    return;
+  }
+
+  try {
+    const res  = await fetch(SCRIPT_URL + '?action=load');
+    const data = await res.json();
+
+    if (data.tasks)    logs           = data.tasks;
+    if (data.meetings) meetings       = data.meetings;
+    if (data.wins)     wins           = data.wins;
+    if (data.projects && Object.keys(data.projects).length > 0) projectDetails = data.projects;
+
+  } catch(e) {
+    console.warn('Could not load from Sheets:', e);
+    sub.textContent = '⚠ Could not connect to Sheets — working offline';
+    setTimeout(() => sub.textContent = originalText, 4000);
+  }
+
+  sub.textContent = originalText;
+  initRender();
+}
+
+// Called after data is loaded (or failed to load) — renders everything
+function initRender() {
+  // Apply seed if Sheets returned no project data
+  if (Object.keys(projectDetails).length === 0) {
+    projectDetails = JSON.parse(JSON.stringify(PROJECT_SEED));
+  }
+  buildFilterBar('taskFilterBar', logs,  f => { activeTaskFilter = f; renderTasks(); });
+  buildFilterBar('winFilterBar',  wins,  f => { activeWinFilter  = f; renderWins(); });
+  buildFilterBar('meetingFilterBar', meetings, f => { activeMeetingFilter = f; renderMeetings(); });
+  renderTasks();
+  renderMeetings();
+  renderWins();
+  buildProjectCards();
+  updateExportBtn();
+}
+
+loadFromSheets();
+
+
+// ── Drag & drop for upload zones ──────────────────────────────────────
+// HTML drag events: dragover (hovering), dragleave, drop (released)
+['task','meeting','win'].forEach(type => {
+  const zone = document.getElementById(type + 'UploadZone');
+  if (!zone) return;
+
+  zone.addEventListener('dragover', e => {
+    e.preventDefault(); // required to allow drop
+    zone.classList.add('drag-over');
+  });
+
+  zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+
+  zone.addEventListener('drop', e => {
+    e.preventDefault();
+    zone.classList.remove('drag-over');
+    const file = e.dataTransfer.files[0];
+    if (!file || !file.type.startsWith('image/')) return;
+
+    // Manually set the file into the hidden input and trigger our handler
+    const inputId = type + 'ImageInput';
+    const dt = new DataTransfer();
+    dt.items.add(file);
+    document.getElementById(inputId).files = dt.files;
+    handleImageSelect(inputId, type + 'Preview', type + 'UploadZone');
+  });
+});
+
+// Default date pickers to today
+const todayISO = new Date().toISOString().slice(0, 10);
+document.getElementById('meetingDate').value = todayISO;
+document.getElementById('winDate').value     = todayISO;
+document.getElementById('taskDate').value    = todayISO;
+
+</script>
+
+<!-- Lightbox overlay — hidden by default, shown when a thumbnail is clicked -->
+<div class="lightbox" id="lightbox" onclick="closeLightbox(event)">
+  <button class="lightbox-close" onclick="closeLightbox()">✕</button>
+  <img id="lightboxImg" src="" alt="Screenshot">
+</div>
+
+</body>
+</html>
