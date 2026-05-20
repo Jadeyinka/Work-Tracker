@@ -712,8 +712,9 @@ function buildChips(containerId, onSelect) {
   });
 }
 
-buildChips('taskProjectChips', p => selectedTaskProject = p);
+buildChips('taskProjectChips',    p => selectedTaskProject    = p);
 buildChips('meetingProjectChips', p => selectedMeetingProject = p);
+buildChips('winProjectChips',     p => selectedWinProject     = p);
 
 
 // ─────────────────────────────────────────────────────────────────────
