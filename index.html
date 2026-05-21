@@ -216,8 +216,6 @@ h1{font-family:'Syne',sans-serif;font-size:clamp(24px,4vw,36px);font-weight:800;
 <!-- STATS -->
 <div class="stats">
   <div class="stat"><div class="stat-num orange" id="statTotal">0</div><div class="stat-label">Task logs</div></div>
-  <div class="stat"><div class="stat-num green" id="statDone">0</div><div class="stat-label">Done</div></div>
-  <div class="stat"><div class="stat-num" id="statProgress">0</div><div class="stat-label">In progress</div></div>
   <div class="stat"><div class="stat-num blue" id="statMeetings">0</div><div class="stat-label">Meetings</div></div>
   <div class="stat"><div class="stat-num purple" id="statWins">0</div><div class="stat-label">Wins</div></div>
 </div>
@@ -332,11 +330,7 @@ h1{font-family:'Syne',sans-serif;font-size:clamp(24px,4vw,36px);font-weight:800;
       <label>Who was in the meeting?</label>
       <input type="text" id="entryPeople" placeholder="e.g. Sarah (PM), Lukas (Dev)…">
     </div>
-    <div class="field meeting-field" id="discussedField">
-      <label>What was discussed?</label>
-      <textarea id="entryDiscussed" placeholder="Key topics covered…"></textarea>
-    </div>
-    <div class="field meeting-field" id="conclusionField">
+<div class="field meeting-field" id="conclusionField">
       <label>What was concluded / next steps?</label>
       <textarea id="entryConclusion" placeholder="Decisions made, actions assigned…"></textarea>
     </div>
@@ -384,7 +378,7 @@ h1{font-family:'Syne',sans-serif;font-size:clamp(24px,4vw,36px);font-weight:800;
 // CONFIG
 // ─────────────────────────────────────────────────────────────────────
 // PROJECTS is now dynamic — loaded from localStorage so new ones persist
-let PROJECTS = JSON.parse(localStorage.getItem('projectList') || '["Procurement Companion","Slovenia GMT4","Stein Exception","OSMP","ALCM","Product Dashboard","KPI Store","CTC Dashboard","CC&E"]');
+let PROJECTS = JSON.parse(localStorage.getItem('projectList') || '["Procurement Companion","Slovenia GMT4","Stein Exception","OSMP","ALCM","Product Dashboard","KPI Store","CTC Dashboard","CC&E","Personal"]');
 function saveProjectList(){ localStorage.setItem('projectList', JSON.stringify(PROJECTS)); }
 
 const PROJECT_SEED = {
@@ -396,7 +390,8 @@ const PROJECT_SEED = {
   "Product Dashboard":{description:"A consolidated Power BI dashboard delivering a unified view of performance across small and large molecules brands.",role:"",contacts:"",notes:"",status:"Active"},
   "KPI Store":{description:"Centralized KPI reporting enabling standardized, validated Power BI reports through a shared metrics catalog.",role:"",contacts:"",notes:"",status:"Active"},
   "CTC Dashboard":{description:"An analytics dashboard that provides visibility into global trade compliance, enabling monitoring of trade classification accuracy, documentation status, and regulatory adherence for cross-border activities.",role:"",contacts:"",notes:"",status:"Active"},
-  "CC&E":{description:"",role:"",contacts:"",notes:"",status:"Active"}
+  "CC&E":{description:"",role:"",contacts:"",notes:"",status:"Active"},
+  "Personal":{description:"",role:"",contacts:"",notes:"",status:"Active"}
 };
 
 // ─────────────────────────────────────────────────────────────────────
@@ -544,7 +539,6 @@ function openModal(type,id){
     } else if(type==='meeting'){
       document.getElementById('entryText').value=entry.discussed||'';
       document.getElementById('entryPeople').value=entry.people||'';
-      document.getElementById('entryDiscussed').value=entry.discussed||'';
       document.getElementById('entryConclusion').value=entry.conclusion||'';
     } else {
       document.getElementById('entryText').value=entry.text||'';
@@ -556,14 +550,18 @@ function openModal(type,id){
   }
 
   onTypeChange();
-  document.getElementById('modalBackdrop').classList.add('open');
+  const bd=document.getElementById('modalBackdrop');
+  bd.classList.add('open');
+  bd.style.display='flex';
   document.body.style.overflow='hidden';
 }
 
 function closeModal(){
-  document.getElementById('modalBackdrop').classList.remove('open');
+  const backdrop = document.getElementById('modalBackdrop');
+  if(backdrop){ backdrop.classList.remove('open'); backdrop.style.display='none'; }
   document.body.style.overflow='';
-  editingId=null;editingType=null;
+  editingId=null;
+  editingType=null;
 }
 
 function handleBackdropClick(e){
@@ -925,14 +923,13 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeModal();docume
 // ─────────────────────────────────────────────────────────────────────
 function updateStats(){
   document.getElementById('statTotal').textContent=logs.length;
-  document.getElementById('statDone').textContent=logs.filter(l=>l.status==='Done').length;
-  document.getElementById('statProgress').textContent=logs.filter(l=>l.status==='In Progress').length;
   document.getElementById('statMeetings').textContent=meetings.length;
   document.getElementById('statWins').textContent=wins.length;
 }
 
 function updateExportBtn(){
   const btn=document.getElementById('exportBtn');
+  if(!btn) return;
   const has=logs.length>0||meetings.length>0||wins.length>0;
   btn.disabled=!has;
   btn.title=has?'':'Add at least one entry first';
