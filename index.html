@@ -466,9 +466,25 @@ async function loadData(){
     ]);
     let updated=false;
     const norm=arr=>arr.map(r=>{if(r.loggedat){r.loggedAt=r.loggedat;delete r.loggedat;}return r;});
-    if(dbT&&dbT.length>logs.length){logs=norm(dbT);localStorage.setItem('workLogs',JSON.stringify(logs));updated=true;}
-    if(dbM&&dbM.length>meetings.length){meetings=norm(dbM);localStorage.setItem('workMeetings',JSON.stringify(meetings));updated=true;}
-    if(dbW&&dbW.length>wins.length){wins=norm(dbW);localStorage.setItem('workWins',JSON.stringify(wins));updated=true;}
+
+    // Merge by ID — combine local + remote, deduplicate, sort newest first
+    // This means entries from all devices are always combined, never lost
+    function mergeById(local, remote) {
+      if(!remote||!remote.length) return local;
+      const merged = [...local];
+      norm(remote).forEach(r => {
+        if(!merged.find(l => l.id === r.id)) merged.push(r);
+      });
+      return merged.sort((a,b) => b.id - a.id);
+    }
+
+    const mergedT = mergeById(logs, dbT);
+    const mergedM = mergeById(meetings, dbM);
+    const mergedW = mergeById(wins, dbW);
+
+    if(mergedT.length !== logs.length){ logs=mergedT; localStorage.setItem('workLogs',JSON.stringify(logs)); updated=true; }
+    if(mergedM.length !== meetings.length){ meetings=mergedM; localStorage.setItem('workMeetings',JSON.stringify(meetings)); updated=true; }
+    if(mergedW.length !== wins.length){ wins=mergedW; localStorage.setItem('workWins',JSON.stringify(wins)); updated=true; }
     if(dbP&&dbP.length){const p={};dbP.forEach(r=>p[r.name]=r.details);if(Object.keys(p).length>Object.keys(projectDetails).length){projectDetails=p;localStorage.setItem('projectDetails',JSON.stringify(projectDetails));updated=true;}}
     if(updated) initRender();
   }catch(e){console.warn('Supabase load failed:',e);}
